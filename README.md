@@ -30,7 +30,7 @@ This project is not just a website; it's a digital dimension. We merge cutting-e
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/hape-cloning.git
+   git clone https://github.com/yusril17-aug/hape-cloning.git
    ```
 2. Navigate to the directory:
    ```bash
