@@ -1,11 +1,25 @@
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
+import { Inter, Syne } from 'next/font/google';
 import './globals.css';
 import CustomCursor from '../components/CustomCursor';
 
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const syne = Syne({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-syne',
+  weight: ['400', '500', '600', '700', '800'],
+});
+
 export const metadata: Metadata = {
-  title: 'Hape Cloning',
-  description: 'GSAP animated landing page',
+  title: 'YSRL.Studio',
+  description: 'Building immersive digital worlds and future-ready products in Web3 culture.',
 };
 
 export default function RootLayout({
@@ -15,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body className={`${inter.variable} ${syne.variable} font-sans antialiased`}>
         <CustomCursor />
         {children}
       </body>
