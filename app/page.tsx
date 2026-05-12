@@ -9,10 +9,10 @@ export default function Page() {
   const scrollProxyRef = useRef<HTMLDivElement>(null);
 
   return (
-    <main ref={pageRef} className="relative min-h-[400vh] bg-zinc-950 text-white">
+    <main ref={pageRef} className="relative min-h-[600vh] bg-zinc-950 text-white">
       <div
         ref={scrollProxyRef}
-        className="pointer-events-none absolute inset-x-0 top-0 h-[400vh]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[600vh]"
         aria-hidden
       />
       <CanvasScene eventSourceRef={pageRef} scrollProxyRef={scrollProxyRef} />
