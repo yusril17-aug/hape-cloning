@@ -6,7 +6,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+gsap.registerPlugin(ScrollTrigger);
 
 // ─── Static Data (separated from animation logic) ─────────────────────────────
 const aboutLines = [
@@ -61,123 +61,117 @@ export default function OverlayUI({ scrollProxyRef }: OverlayUIProps) {
         !contactRef.current
       ) return;
 
-      // ── GSAP Context: scopes all animations; auto-cleans on unmount ───────
-      const ctx = gsap.context(() => {
-        // ── Master Timeline (0–100 maps to scroll 0%–100%) ─────────────────
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: scrollProxyRef.current,
-            start: 'top top',
-            end: 'bottom bottom',
-            scrub: 1,
-            invalidateOnRefresh: true,
-            onUpdate(self) {
-              // Toggle pointer-events based on each section's current opacity.
-              // Only the visible section should be interactive.
-              const refs = [
-                heroRef.current,
-                aboutRef.current,
-                worksContainerRef.current,
-                contactRef.current,
-              ];
-              refs.forEach((el) => {
-                if (!el) return;
-                const opacity = gsap.getProperty(el, 'opacity') as number;
-                el.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none';
-              });
-              void self; // satisfy linter — self used implicitly via closure
-            },
+      // ── Master Timeline (0–100 maps to scroll 0%–100%) ─────────────────
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: scrollProxyRef.current,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 1,
+          invalidateOnRefresh: true,
+          onUpdate(self) {
+            // Toggle pointer-events based on each section's current opacity.
+            // Only the visible section should be interactive.
+            const refs = [
+              heroRef.current,
+              aboutRef.current,
+              worksContainerRef.current,
+              contactRef.current,
+            ];
+            refs.forEach((el) => {
+              if (!el) return;
+              const opacity = gsap.getProperty(el, 'opacity') as number;
+              el.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none';
+            });
+            void self; // satisfy linter — self used implicitly via closure
           },
-        });
+        },
+      });
 
-        // Extend timeline to exactly 100 units so positions map to percentages
-        tl.addLabel('start', 0);
-        tl.addLabel('end', ZONE.TIMELINE_END);
+      // Extend timeline to exactly 100 units so positions map to percentages
+      tl.addLabel('start', 0);
+      tl.addLabel('end', ZONE.TIMELINE_END);
 
-        // ── ZONA 1 → 2: Hero text out ───────────────────────────────────────
-        tl.to(heroRef.current, {
-          opacity: 0,
-          scale: 0.85,
-          y: -30,
-          duration: 5,
-          ease: 'power2.inOut',
-        }, ZONE.HERO_OUT_START);
+      // ── ZONA 1 → 2: Hero text out ───────────────────────────────────────
+      tl.to(heroRef.current, {
+        opacity: 0,
+        scale: 0.85,
+        y: -30,
+        duration: 5,
+        ease: 'power2.inOut',
+      }, ZONE.HERO_OUT_START);
 
-        // ── ZONA 2: About in ────────────────────────────────────────────────
-        tl.set(aboutRef.current, { visibility: 'visible' }, ZONE.ABOUT_IN_START);
+      // ── ZONA 2: About in ────────────────────────────────────────────────
+      tl.set(aboutRef.current, { visibility: 'visible' }, ZONE.ABOUT_IN_START);
+      tl.fromTo(
+        aboutRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 5, ease: 'power2.out' },
+        ZONE.ABOUT_IN_START,
+      );
+
+      const aboutRevealElements = gsap.utils.toArray('.about-reveal', aboutRef.current);
+      if (aboutRevealElements.length) {
         tl.fromTo(
-          aboutRef.current,
-          { opacity: 0 },
-          { opacity: 1, duration: 5, ease: 'power2.out' },
-          ZONE.ABOUT_IN_START,
+          aboutRevealElements,
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 5, stagger: 1, ease: 'power3.out' },
+          ZONE.ABOUT_IN_START + 1
         );
+      }
 
-        const aboutRevealElements = gsap.utils.toArray('.about-reveal', aboutRef.current);
-        if (aboutRevealElements.length) {
-          tl.fromTo(
-            aboutRevealElements,
-            { y: 30, opacity: 0 },
-            { y: 0, opacity: 1, duration: 5, stagger: 1, ease: 'power3.out' },
-            ZONE.ABOUT_IN_START + 1
-          );
-        }
+      // About out
+      tl.to(aboutRef.current, {
+        opacity: 0,
+        visibility: 'hidden',
+        duration: 5,
+        ease: 'power2.inOut',
+      }, ZONE.ABOUT_OUT_START);
 
-        // About out
-        tl.to(aboutRef.current, {
-          opacity: 0,
-          visibility: 'hidden',
-          duration: 5,
-          ease: 'power2.inOut',
-        }, ZONE.ABOUT_OUT_START);
+      // ── ZONA 3: Works in ────────────────────────────────────────────────
+      tl.fromTo(
+        worksContainerRef.current,
+        { opacity: 0, visibility: 'hidden' },
+        { opacity: 1, visibility: 'visible', duration: 5, ease: 'power2.out' },
+        ZONE.WORKS_IN_START,
+      );
 
-        // ── ZONA 3: Works in ────────────────────────────────────────────────
+      // Horizontal scroll track
+      tl.to(worksTrackRef.current, {
+        x: () =>
+          worksTrackRef.current
+            ? -(worksTrackRef.current.scrollWidth) + window.innerWidth
+            : 0,
+        duration: ZONE.WORKS_SCROLL_END - ZONE.WORKS_IN_START, // 35 units
+        ease: 'none',
+      }, ZONE.WORKS_IN_START);
+
+      // Works out
+      tl.to(worksContainerRef.current, {
+        opacity: 0,
+        visibility: 'hidden',
+        duration: 5,
+        ease: 'power2.inOut',
+      }, ZONE.WORKS_SCROLL_END);
+
+      // ── ZONA 4: Contact in ──────────────────────────────────────────────
+      tl.set(contactRef.current, { visibility: 'visible' }, ZONE.CONTACT_IN_START);
+      tl.fromTo(
+        contactRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 4, ease: 'power2.out' },
+        ZONE.CONTACT_IN_START,
+      );
+
+      const contactRevealElements = gsap.utils.toArray('.contact-reveal', contactRef.current);
+      if (contactRevealElements.length) {
         tl.fromTo(
-          worksContainerRef.current,
-          { opacity: 0, visibility: 'hidden' },
-          { opacity: 1, visibility: 'visible', duration: 5, ease: 'power2.out' },
-          ZONE.WORKS_IN_START,
+          contactRevealElements,
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 6, stagger: 1.2, ease: 'power3.out' },
+          ZONE.CONTACT_IN_START + 1
         );
-
-        // Horizontal scroll track
-        tl.to(worksTrackRef.current, {
-          x: () =>
-            worksTrackRef.current
-              ? -(worksTrackRef.current.scrollWidth) + window.innerWidth
-              : 0,
-          duration: ZONE.WORKS_SCROLL_END - ZONE.WORKS_IN_START, // 35 units
-          ease: 'none',
-        }, ZONE.WORKS_IN_START);
-
-        // Works out
-        tl.to(worksContainerRef.current, {
-          opacity: 0,
-          visibility: 'hidden',
-          duration: 5,
-          ease: 'power2.inOut',
-        }, ZONE.WORKS_SCROLL_END);
-
-        // ── ZONA 4: Contact in ──────────────────────────────────────────────
-        tl.set(contactRef.current, { visibility: 'visible' }, ZONE.CONTACT_IN_START);
-        tl.fromTo(
-          contactRef.current,
-          { opacity: 0 },
-          { opacity: 1, duration: 4, ease: 'power2.out' },
-          ZONE.CONTACT_IN_START,
-        );
-
-        const contactRevealElements = gsap.utils.toArray('.contact-reveal', contactRef.current);
-        if (contactRevealElements.length) {
-          tl.fromTo(
-            contactRevealElements,
-            { y: 30, opacity: 0 },
-            { y: 0, opacity: 1, duration: 6, stagger: 1.2, ease: 'power3.out' },
-            ZONE.CONTACT_IN_START + 1
-          );
-        }
-      }); // end gsap.context
-
-      // ── Cleanup: GSAP Context reverts all tweens & kills ScrollTrigger ────
-      return () => ctx.revert();
+      }
     },
     { scope: rootRef, dependencies: [scrollProxyRef] },
   );
